@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArchGuard Boot</title>
+    <meta name="description"
+        content="Professional architectural dependency graph visualizer for Spring Boot applications">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loader-container">
+            <div class="spinner"></div>
+            <p class="loader-text">Cloning repository & building graph...</p>
+            <p class="loader-subtext">This may take a moment</p>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <rect width="28" height="28" rx="8" fill="url(#logo-grad)" />
+                    <path d="M8 20L14 8L20 20H8Z" stroke="white" stroke-width="1.5" fill="none" />
+                    <circle cx="14" cy="14" r="3" fill="white" opacity="0.8" />
+                    <defs>
+                        <linearGradient id="logo-grad" x1="0" y1="0" x2="28" y2="28">
+                            <stop stop-color="#6366f1" />
+                            <stop offset="1" stop-color="#8b5cf6" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="logo-text">ArchGuard</span>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- Action -->
+            <div class="sidebar-section">
+                <button id="btn-generate" class="btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.5 8L8 2.5L2.5 8M8 2.5V13.5" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 8 8)" />
+                    </svg>
+                    Generate Graph
+                </button>
+            </div>
+
+            <!-- Stats cards -->
+            <div id="stats-panel" class="sidebar-section hidden">
+                <h3 class="section-title">Graph Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-internal">0</span>
+                        <span class="stat-label">Internal</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-external">0</span>
+                        <span class="stat-label">External</span>
+                    </div>
+                    <div class="stat-card stat-card-wide">
+                        <span class="stat-value" id="stat-edges">0</span>
+                        <span class="stat-label">Edges</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div id="legend-panel" class="sidebar-section hidden">
+                <h3 class="section-title">Node Layers</h3>
+                <div class="legend-list">
+                    <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>Controller</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Service</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Repository</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Entity</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>DTO</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#ec4899"></span>Exception</div>
+                </div>
+            </div>
+
+            <!-- Edge Legend -->
+            <div id="edge-legend-panel" class="sidebar-section hidden">
+                <h3 class="section-title">Edge Types</h3>
+                <div class="legend-list">
+                    <div class="legend-item"><span class="legend-line"
+                            style="background:#94a3b8; height: 2px;"></span>Method Call</div>
+                    <div class="legend-item"><span class="legend-line"
+                            style="background:#94a3b8; height: 3px;"></span>Field Injection</div>
+                    <div class="legend-item"><span class="legend-line"
+                            style="background:red; height: 4px;"></span>Violation</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div id="filter-panel" class="sidebar-section hidden">
+                <h3 class="section-title">Filters</h3>
+                <label class="toggle-row">
+                    <input type="checkbox" id="toggle-external">
+                    <span>Show External Nodes</span>
+                </label>
+                <label class="toggle-row">
+                    <input type="checkbox" id="toggle-labels" checked>
+                    <span>Show Labels</span>
+                </label>
+            </div>
+
+            <!-- Architectural Insights -->
+            <div id="insights-panel" class="sidebar-section hidden">
+                <h3 class="section-title">Architecture Insights</h3>
+                <div id="insights-content" class="insights-content">
+                    <p class="insight-placeholder">Analyzing structure...</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main graph area -->
+    <main id="graph-area" class="graph-area">
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <circle cx="40" cy="40" r="38" stroke="#334155" stroke-width="1.5" stroke-dasharray="6 4" />
+                <circle cx="25" cy="30" r="6" fill="#6366f1" opacity="0.6" />
+                <circle cx="55" cy="25" r="5" fill="#22d3ee" opacity="0.6" />
+                <circle cx="50" cy="55" r="7" fill="#f59e0b" opacity="0.6" />
+                <circle cx="25" cy="55" r="4" fill="#ef4444" opacity="0.6" />
+                <line x1="25" y1="30" x2="55" y2="25" stroke="#475569" stroke-width="1" />
+                <line x1="55" y1="25" x2="50" y2="55" stroke="#475569" stroke-width="1" />
+                <line x1="25" y1="30" x2="25" y2="55" stroke="#475569" stroke-width="1" />
+            </svg>
+            <h2>No graph generated yet</h2>
+            <p>Click <strong>"Generate Graph"</strong> to clone and analyze a repository</p>
+        </div>
+        <svg id="graph-svg"></svg>
+    </main>
+
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip hidden"></div>
+
+    <!-- Node detail panel -->
+    <div id="node-detail" class="node-detail hidden">
+        <div class="detail-header">
+            <h4 id="detail-name"></h4>
+            <button id="detail-close" class="detail-close">&times;</button>
+        </div>
+        <div class="detail-body">
+            <div class="detail-row"><span class="detail-key">FQN</span><span id="detail-fqn"
+                    class="detail-value"></span></div>
+            <div class="detail-row"><span class="detail-key">Layer</span><span id="detail-layer"
+                    class="detail-value"></span></div>
+            <div class="detail-row"><span class="detail-key">Incoming</span><span id="detail-in"
+                    class="detail-value"></span></div>
+            <div class="detail-row"><span class="detail-key">Outgoing</span><span id="detail-out"
+                    class="detail-value"></span></div>
+            <div class="detail-row"><span class="detail-key">Neighbors</span>
+                <div id="detail-neighbors" class="detail-neighbors"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="graph.js"></script>
+</body>
+
+</html>

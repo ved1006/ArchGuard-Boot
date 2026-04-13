@@ -13,6 +13,8 @@ import com.ved.BackendAnalyzer.rules.MissingRestControllerAdviceRule;
 import com.ved.BackendAnalyzer.git.RepoCloner;
 import com.ved.BackendAnalyzer.model.MethodCallInfo;
 import com.ved.BackendAnalyzer.scanner.MethodCallScanner;
+import com.ved.BackendAnalyzer.graph.GraphBuilder;
+import com.ved.BackendAnalyzer.graph.DependencyGraph;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -59,6 +61,7 @@ public class AnalyzerService {
         List<Path> javaFiles = javaFileScanner.scan(repoDir.toPath());
         System.out.println("Java files found: " + javaFiles.size());
 
+
         List<ClassInfo> classes = annotationScanner.scan(javaFiles);
 
         long controllers = classes.stream().filter(c -> c.getType() == ClassInfo.Type.CONTROLLER).count();
@@ -96,5 +99,23 @@ for (Issue issue : allIssues) {
 }
 
 
+    }
+
+    public DependencyGraph buildDependencyGraph() {
+        System.out.println("GraphBuilder endpoint called");
+        String repoUrl = "https://github.com/ved1006/campusCore";
+        File repoDir = repoCloner.cloneRepo(repoUrl);
+        List<Path> javaFiles = javaFileScanner.scan(repoDir.toPath());
+
+        System.out.println("Building Dependency Graph...");
+        Path sourceRoot = repoDir.toPath().resolve("src/main/java");
+        GraphBuilder graphBuilder = new GraphBuilder(sourceRoot);
+        DependencyGraph graph = graphBuilder.buildGraph(javaFiles);
+
+        long internalNodes = graph.getNodes().stream().filter(n -> n.getLayer() != ClassInfo.Type.EXTERNAL).count();
+        long externalNodes = graph.getNodes().stream().filter(n -> n.getLayer() == ClassInfo.Type.EXTERNAL).count();
+        System.out.println("Dependency Graph Built -> Internal Nodes: " + internalNodes + " | External Nodes: " + externalNodes + " | Total Edges: " + graph.getEdges().size());
+
+        return graph;
     }
 }

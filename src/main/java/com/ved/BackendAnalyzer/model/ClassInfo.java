@@ -7,6 +7,9 @@ public class ClassInfo {
         SERVICE,
         REPOSITORY,
         ENTITY,
+        DTO,
+        EXCEPTION,
+        EXTERNAL,
         OTHER
     }
 
