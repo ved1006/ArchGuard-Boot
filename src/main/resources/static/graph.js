@@ -1,7 +1,3 @@
-/**
- * ArchGuard — Dependency Graph Visualization
- * Specification-aligned rewrite for clear, layered architecture.
- */
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 
@@ -117,6 +113,10 @@ function filterData(data, showExternal) {
 
     // 2️⃣ KEEP ONLY IMPORTANT EDGES
     const links = data.edges.filter(e => {
+        if (e.isCycleEdge) {
+            return nodeIndex.has(e.source) && nodeIndex.has(e.target);
+        }
+
         if (!KEPT_EDGE_TYPES.has(e.type)) return false;
         if (!nodeIndex.has(e.source)) return false;
         if (!nodeIndex.has(e.target)) return false;

@@ -766,6 +766,10 @@ export default function App() {
                       <span className="meta-val">{graph.metrics.coupling.toFixed(2)}</span>
                     </div>
                     <div className="meta-item">
+                      <span className="meta-key">Density</span>
+                      <span className="meta-val">{(typeof graph.metrics.density === 'number') ? graph.metrics.density.toFixed(3) : '0.000'}</span>
+                    </div>
+                    <div className="meta-item">
                       <span className="meta-key">Graph Score</span>
                       <span className="meta-val">{graph.score.toFixed(1)}</span>
                     </div>
@@ -812,6 +816,10 @@ export default function App() {
                       <div className="gm-item">
                         <span className="gm-val">{graph.metrics.coupling.toFixed(2)}</span>
                         <span className="gm-key">COUPLING</span>
+                      </div>
+                      <div className="gm-item">
+                        <span className="gm-val">{(typeof graph.metrics.density === 'number') ? graph.metrics.density.toFixed(3) : '0.000'}</span>
+                        <span className="gm-key">DENSITY</span>
                       </div>
                     </div>
                   </div>
