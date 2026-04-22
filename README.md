@@ -1,81 +1,163 @@
-# BackendAnalyzer
+# ArchGuard Boot
 
-BackendAnalyzer is a static code analysis tool specifically designed for Spring Boot applications. It automates the code review process by scanning Java source code for common architectural violations and deviations from Spring Boot best practices.
+ArchGuard Boot is now set up as a full-stack project:
 
-## 🚀 Features
+- `Spring Boot` backend in the repo root
+- `React + Vite` frontend in [`frontend`](./frontend)
 
--   **Automated Repository Cloning**: Directly clones Git repositories for analysis.
--   **AST-Based Parsing**: Uses `JavaParser` to deeply understand the code structure, not just regex matching.
--   **Layered Architecture Enforcement**: Detects when Controllers bypass the Service layer to access Repositories directly.
--   **DTO Pattern Enforcement**: Identifies Controllers that return Database Entities directly instead of DTOs.
--   **Performance Checks**: Flags potential performance bottlenecks like unpaginated `findAll()` calls.
--   **Exception Handling**: Checks for the existence of global exception handling (`@RestControllerAdvice`).
+The backend clones a public Spring Boot repository, analyzes its Java code, and returns:
 
-## 🛠 Tech Stack
+- issue list
+- summary counts
+- quality score
+- dependency graph data
 
--   **Language**: Java 17
--   **Framework**: Spring Boot 3.x
--   **Parsing**: JavaParser (javaparser-core)
--   **Git Integration**: JGit (org.eclipse.jgit)
--   **Build Tool**: Maven
+The React frontend calls the backend API and shows the results in a visual dashboard.
 
-## 📋 Implemented Rules
+## Project Structure
 
-The analyzer currently enforces the following rules:
-
-1.  **ControllerRepositoryRule**: Flagged when a `@RestController` directly injects or calls a `@Repository`. Controllers should always go through a Service layer.
-2.  **EntityReturnedFromControllerRule**: Flagged when a Controller method returns a class annotated with `@Entity`. Use DTOs to decouple the API from the database schema.
-3.  **MissingServiceLayerRule**: Flagged if the project lacks a Service layer concept or if business logic appears to be misplaced.
-4.  **UnpaginatedFindAllRule**: Flagged when `findAll()` is called without `Pageable`. This can cause memory overflows in large databases.
-5.  **MissingRestControllerAdviceRule**: Flagged if no class is annotated with `@RestControllerAdvice`, indicating a lack of centralized exception handling.
-
-## 📦 Installation & Usage
-
-### Prerequisites
--   Java 17+
--   Maven
-
-### Steps
-1.  **Clone the BackendAnalyzer**:
-    ```bash
-    git clone <your-repo-url>
-    cd BackendAnalyzer
-    ```
-
-2.  **Build the Project**:
-    ```bash
-    mvn clean install
-    ```
-
-3.  **Run the Analyzer**:
-    You can run it as a Spring Boot application.
-    ```bash
-    mvn spring-boot:run
-    ```
-
-4.  **Trigger Analysis**:
-    The tool exposes a REST endpoint to trigger the analysis.
-    ```bash
-    curl -X POST http://localhost:8080/analyze
-    ```
-    *Note: Currently, the target repository URL is configured in `AnalyzerService.java`. Update the `repoUrl` variable to analyze a different repository.*
-
-## 📂 Project Structure
-
-```
-src/main/java/com/ved/BackendAnalyzer
-├── controller       # REST endpoints to trigger analysis
-├── git              # Git cloning and management logic
-├── model            # Internal data models (Issue, ClassInfo, etc.)
-├── rules            # Implementation of specific analysis rules
-├── scanner          # Code scanners (Annotation, MethodCall, JavaFile)
-├── service          # Main business logic orchestrating the analysis
-└── utils            # Utility classes
+```text
+ArchGuard-Boot/
+|- src/                         # Spring Boot backend source
+|- frontend/                    # React frontend
+|- mvnw / mvnw.cmd              # Maven wrapper
+|- pom.xml                      # Backend dependencies
+|- start-backend.cmd            # Easy backend starter
+|- start-frontend.cmd           # Easy frontend starter
+|- CODEX_PROMPT.md              # Ready-to-use Codex 5.4 prompt
 ```
 
-## 🔮 Future Roadmap
+## What Was Fixed
 
--   **Dynamic Configuration**: Pass repository URL as a request parameter.
--   **CI/CD Integration**: a GitHub Action to block PRs on violations.
--   **Web Dashboard**: A UI to visualize issues and trends.
--   **Custom Rules**: A DSL to define custom architectural rules.
+- Converted the backend from console-heavy prototype behavior to JSON APIs.
+- Added `POST /api/analyze` for full analysis.
+- Added `GET /api/health` for quick backend checks.
+- Added CORS so the React frontend can call the backend.
+- Made the target repo URL configurable through the request body.
+- Improved the rules so they return structured issues.
+- Fixed the Windows Maven wrapper for this environment.
+- Added a separate React frontend with a repository input, issue cards, stats, and graph view.
+
+## Backend API
+
+### `GET /api/health`
+
+Returns:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+### `POST /api/analyze`
+
+Request body:
+
+```json
+{
+  "repoUrl": "https://github.com/ved1006/campusCore"
+}
+```
+
+If `repoUrl` is omitted or blank, the backend uses the default repo from `application.properties`.
+
+## How To Run
+
+### Option 1: easiest
+
+Open two terminals in the project root.
+
+Terminal 1:
+
+```bat
+start-backend.cmd
+```
+
+Terminal 2:
+
+```bat
+start-frontend.cmd
+```
+
+Then open:
+
+```text
+http://localhost:5173
+```
+
+### Option 2: manual
+
+Backend:
+
+```bat
+mvnw.cmd spring-boot:run
+```
+
+Frontend:
+
+```bat
+cd frontend
+npm.cmd run dev
+```
+
+## Requirements
+
+Already installed and verified in this workspace:
+
+- Java 17 compatible backend build
+- Maven wrapper dependencies
+- Node frontend packages in `frontend/node_modules`
+
+## Verified
+
+These checks were completed successfully in this workspace:
+
+- `cmd /c npm install`
+- `cmd /c npm run build`
+- `cmd /c mvnw.cmd test`
+- Spring Boot startup health check at `GET /api/health`
+- End-to-end analysis request against `https://github.com/ved1006/campusCore`
+
+Example verified summary from the backend:
+
+```json
+{
+  "repoUrl": "https://github.com/ved1006/campusCore",
+  "javaFiles": 13,
+  "controllers": 1,
+  "services": 4,
+  "repositories": 1,
+  "entities": 1,
+  "dtos": 2,
+  "exceptions": 3,
+  "others": 1,
+  "issues": 2,
+  "score": 91.42533936651584,
+  "cycles": 1
+}
+```
+
+## Beginner Notes
+
+- `src/main/java/...` contains the Spring Boot backend code.
+- `frontend/src/...` contains the React frontend code.
+- Spring Boot runs on port `8080`.
+- React runs on port `5173`.
+- The frontend uses a Vite proxy so calls to `/api/...` go to the backend automatically.
+
+## PowerShell Note
+
+On this machine, `npm` may be blocked by PowerShell execution policy when it tries to use `npm.ps1`.
+
+If that happens, use:
+
+```bat
+npm.cmd run dev
+```
+
+instead of:
+
+```bat
+npm run dev
+```

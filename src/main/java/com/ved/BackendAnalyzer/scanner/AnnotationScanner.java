@@ -53,6 +53,27 @@ public class AnnotationScanner {
         if (cls.isAnnotationPresent("Entity"))
             return ClassInfo.Type.ENTITY;
 
+        if (cls.isAnnotationPresent("ControllerAdvice") || cls.isAnnotationPresent("RestControllerAdvice"))
+            return ClassInfo.Type.EXCEPTION;
+
+        String className = cls.getNameAsString();
+        if (className.endsWith("Dto") || className.endsWith("DTO")
+                || className.endsWith("Request") || className.endsWith("Response")) {
+            return ClassInfo.Type.DTO;
+        }
+
+        if (className.endsWith("Exception") || className.endsWith("Error")) {
+            return ClassInfo.Type.EXCEPTION;
+        }
+
+        if (className.endsWith("Service") || className.endsWith("ServiceImpl")) {
+            return ClassInfo.Type.SERVICE;
+        }
+
+        if (className.endsWith("Repository") || className.endsWith("Repo") || className.endsWith("Dao")) {
+            return ClassInfo.Type.REPOSITORY;
+        }
+
         return ClassInfo.Type.OTHER;
     }
 }

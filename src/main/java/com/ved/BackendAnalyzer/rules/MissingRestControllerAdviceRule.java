@@ -2,23 +2,37 @@ package com.ved.BackendAnalyzer.rules;
 
 import java.util.List;
 
-import com.ved.BackendAnalyzer.model.ClassInfo;
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.ved.BackendAnalyzer.model.Issue;
 
 public class MissingRestControllerAdviceRule {
 
-    public void check(List<ClassInfo> classes) {
+    public List<Issue> check(List<java.nio.file.Path> javaFiles) {
+        JavaParser parser = new JavaParser();
 
-        boolean hasAdvice = classes.stream()
-                .anyMatch(c ->
-                        c.getClassName().toLowerCase().contains("exception") ||
-                        c.getClassName().toLowerCase().contains("advice")
-                );
+        for (java.nio.file.Path path : javaFiles) {
+            try {
+                CompilationUnit cu = parser.parse(path).getResult().orElse(null);
+                if (cu == null) {
+                    continue;
+                }
 
-        if (!hasAdvice) {
-            System.out.println(
-                "[MEDIUM] No global exception handler (@RestControllerAdvice) found. " +
-                "Unhandled exceptions may leak to clients."
-            );
+                for (ClassOrInterfaceDeclaration cls : cu.findAll(ClassOrInterfaceDeclaration.class)) {
+                    if (cls.isAnnotationPresent("RestControllerAdvice") || cls.isAnnotationPresent("ControllerAdvice")) {
+                        return List.of();
+                    }
+                }
+            } catch (Exception ignored) {
+            }
         }
+
+        return List.of(new Issue(
+                "MISSING_REST_CONTROLLER_ADVICE",
+                Issue.Severity.MEDIUM,
+                "No @RestControllerAdvice or @ControllerAdvice class was found for centralized exception handling.",
+                "Project architecture"
+        ));
     }
 }

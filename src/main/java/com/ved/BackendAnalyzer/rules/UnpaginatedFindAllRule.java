@@ -13,11 +13,15 @@ public class UnpaginatedFindAllRule {
 
         for (MethodCallInfo call : calls) {
             if (call.getMethodName().equals("findAll")) {
+                String location = call.getCallerClass();
+                if (call.getLineNumber() > 0) {
+                    location += " (line " + call.getLineNumber() + ")";
+                }
                 issues.add(new Issue(
                         "UNPAGINATED_FIND_ALL",
                         Issue.Severity.MEDIUM,
                         "Possible unpaginated findAll() usage. Consider using Pageable.",
-                        call.getCallerClass()
+                        location
                 ));
             }
         }

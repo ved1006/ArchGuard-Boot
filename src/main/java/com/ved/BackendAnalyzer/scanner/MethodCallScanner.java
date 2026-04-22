@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.ved.BackendAnalyzer.model.MethodCallInfo;
 
@@ -20,17 +21,27 @@ public class MethodCallScanner {
                 CompilationUnit cu = parser.parse(path).getResult().orElse(null);
                 if (cu == null) continue;
 
-                String className = path.getFileName().toString();
+                String packageName = cu.getPackageDeclaration()
+                        .map(pkg -> pkg.getNameAsString())
+                        .orElse("");
+
+                ClassOrInterfaceDeclaration enclosingClass = cu.findFirst(ClassOrInterfaceDeclaration.class).orElse(null);
+                String className = enclosingClass != null
+                        ? enclosingClass.getNameAsString()
+                        : path.getFileName().toString().replace(".java", "");
 
                 for (MethodCallExpr call : cu.findAll(MethodCallExpr.class)) {
                     call.getScope().ifPresent(scope -> {
                         String calledObject = scope.toString();
                         String methodName = call.getNameAsString();
+                        int lineNumber = call.getBegin().map(position -> position.line).orElse(-1);
 
                         calls.add(new MethodCallInfo(
                                 className,
+                                packageName,
                                 calledObject,
-                                methodName
+                                methodName,
+                                lineNumber
                         ));
                     });
                 }

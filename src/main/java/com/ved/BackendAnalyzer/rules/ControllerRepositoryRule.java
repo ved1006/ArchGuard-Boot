@@ -1,44 +1,35 @@
 package com.ved.BackendAnalyzer.rules;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.ved.BackendAnalyzer.model.ClassInfo;
-import com.ved.BackendAnalyzer.model.MethodCallInfo;
+import com.ved.BackendAnalyzer.graph.DependencyGraph;
+import com.ved.BackendAnalyzer.graph.GraphEdge;
+import com.ved.BackendAnalyzer.model.Issue;
 
 public class ControllerRepositoryRule {
 
-    public void check(List<ClassInfo> classes, List<MethodCallInfo> calls) {
-
-        // 1. find controller class names
-        Set<String> controllers = classes.stream()
-                .filter(c -> c.getType() == ClassInfo.Type.CONTROLLER)
-                .map(c -> c.getClassName())
+    public List<Issue> check(DependencyGraph graph) {
+        Set<String> seen = graph.getEdges().stream()
+                .filter(GraphEdge::isViolation)
+                .map(edge -> edge.getSource().getFullyQualifiedName() + "->" + edge.getTarget().getFullyQualifiedName())
                 .collect(Collectors.toSet());
 
-        // 2. find repository class names
-        Set<String> repositories = classes.stream()
-                .filter(c -> c.getType() == ClassInfo.Type.REPOSITORY)
-                .map(c -> c.getClassName())
-                .collect(Collectors.toSet());
+        List<Issue> issues = new ArrayList<>();
+        for (String key : seen) {
+            String[] parts = key.split("->", 2);
+            String source = parts[0];
+            String target = parts[1];
 
-        // 3. detect violations
-        for (MethodCallInfo call : calls) {
-            String caller = call.getCallerClass();
-            String calledObject = call.getCalledObject();
-
-            if (controllers.contains(caller)) {
-                for (String repo : repositories) {
-                    if (calledObject.toLowerCase().contains(repo.replace(".java","").toLowerCase())) {
-                        System.out.println(
-                                "[HIGH] Controller " + caller +
-                                " directly calls Repository (" + calledObject + ")"
-                        );
-                    }
-                }
-            }
+            issues.add(new Issue(
+                    "CONTROLLER_REPOSITORY_ACCESS",
+                    Issue.Severity.HIGH,
+                    "Controller depends directly on Repository. Route calls through a Service layer instead.",
+                    source + " -> " + target
+            ));
         }
+        return issues;
     }
 }

@@ -3,11 +3,11 @@ package com.ved.BackendAnalyzer.rules;
 import java.util.List;
 
 import com.ved.BackendAnalyzer.model.ClassInfo;
+import com.ved.BackendAnalyzer.model.Issue;
 
 public class MissingServiceLayerRule {
 
-    public void check(List<ClassInfo> classes) {
-
+    public List<Issue> check(List<ClassInfo> classes) {
         boolean hasController = classes.stream()
                 .anyMatch(c -> c.getType() == ClassInfo.Type.CONTROLLER);
 
@@ -15,10 +15,14 @@ public class MissingServiceLayerRule {
                 .anyMatch(c -> c.getType() == ClassInfo.Type.SERVICE);
 
         if (hasController && !hasService) {
-            System.out.println(
-                "[HIGH] Controllers detected but no Service layer found. " +
-                "Business logic may be leaking into Controllers."
-            );
+            return List.of(new Issue(
+                    "MISSING_SERVICE_LAYER",
+                    Issue.Severity.HIGH,
+                    "Controllers exist but no Service layer was found. Business logic may be living in controllers.",
+                    "Project architecture"
+            ));
         }
+
+        return List.of();
     }
 }

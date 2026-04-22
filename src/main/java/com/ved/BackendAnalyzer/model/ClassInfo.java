@@ -7,6 +7,9 @@ public class ClassInfo {
         SERVICE,
         REPOSITORY,
         ENTITY,
+        DTO,
+        EXCEPTION,
+        EXTERNAL,
         OTHER
     }
 
@@ -26,6 +29,13 @@ public class ClassInfo {
 
     public String getPackageName() {
         return packageName;
+    }
+
+    public String getFullyQualifiedName() {
+        if (packageName == null || packageName.isBlank()) {
+            return className;
+        }
+        return packageName + "." + className;
     }
 
     public Type getType() {
